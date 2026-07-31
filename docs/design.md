@@ -25,7 +25,7 @@
 
 | 部件 | 型号 | 说明 |
 |---|---|---|
-| 主控 | NUCLEO-G474RE | STM32G474VET6，170MHz，板载 ST-Link 虚拟串口 |
+| 主控 | 第三方最小系统板 | STM32G474VET6，170MHz，板上 8MHz 有源晶振，SWD 接出（DAP-Link 烧录） |
 | 驱动板 | DRV8316CTRGFR | 引脚配置版（无 SPI），集成 FET 与电流检测，40V/8A 峰值 |
 | 编码器 | MT6701 | 磁编码器，ABZ 模式 1024 线，OTP 默认配置，Z 索引已接出 |
 | 电机 | 4015 24N22P | 11 极对，Delta 绕组，24V 额定 |
@@ -52,7 +52,7 @@
 | MT6701 A/B | PA6 / PA7 | TIM3 CH1/CH2 编码器模式（4x 解码） |
 | MT6701 Z | PB4 | GPIO EXTI 中断输入 |
 | nSLEEP | PC7 | GPIO 推挽输出（拉高唤醒 DRV8316CT） |
-| UART TX/RX | PA2 / PA3 | USART2，115200 8N1，板载虚拟串口 |
+| UART TX/RX | PA2 / PA3 | USART2，115200 8N1，外接 USB-TTL（DAP 虚拟串口可用） |
 
 未使用：SPI（DRV8316CT 无 SPI）、nFAULT（未接出）、INLx（驱动板已接地）。
 
@@ -130,7 +130,7 @@
 
 ## 6. 交互协议
 
-Commander 命令（USART2，115200）：
+Commander 命令（USART2，115200，PA2/PA3 → 外接 USB-TTL 或 DAP-Link 虚拟串口）：
 
 | 命令 | 功能 | 示例 |
 |---|---|---|

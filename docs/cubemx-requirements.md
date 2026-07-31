@@ -1,11 +1,11 @@
-# CubeMX 配置需求清单（NUCLEO-G474RE）
+# CubeMX 配置需求清单（第三方最小系统板 STM32G474VET6）
 
 按此清单在 STM32CubeMX 中配置并生成 **Makefile 工程**（Toolchain: Makefile）。生成后把工程目录纳入本仓库（含 `.ioc` 文件，后续可回归）。
 
 ## 1. 时钟树
 
-- HSE = 24 MHz（NUCLEO-G474RE 板载晶振）
-- SYSCLK = 170 MHz（G474 最高主频）
+- HSE = 8 MHz（板上 8 MHz 有源晶振）
+- SYSCLK = 170 MHz（G474 最高主频，经 PLL 倍频）
 - ADC 时钟由 CubeMX 自动分配（ADC 高速时钟经 PLL，采样时钟 ≤ 60 MHz）
 
 ## 2. 引脚与外设
@@ -52,7 +52,7 @@
 ### 2.5 USART2 — 调试/指令串口（PA2/PA3）
 
 - 异步 115200，8N1，无流控
-- 板载 ST-Link 虚拟串口，无需外部接线
+- 物理串口外接：USB-TTL 转接模块或 DAP-Link 虚拟串口（TX→RX 交叉接线）
 
 ### 2.6 明确不配置
 

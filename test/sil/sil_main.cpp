@@ -174,15 +174,15 @@ static void run_sim_sampled(uint32_t ms, uint32_t sample_ms, Sampler&& sampler) 
   }
 }
 
-// ---- 测试 4：限流（current_limit=2A 生效；IPROPI 量程 ±1.14A 钳位）----
+// ---- 测试 4：限流（current_limit=2A 生效；0.15 V/A 增益下量程 ±11A）----
 static bool test_current_limit() {
-  printf("[TEST] current limit (T3 > limit 2A, IPROPI range clamp)\n");
+  printf("[TEST] current limit (T3 > limit 2A)\n");
   model_motor.reset();
   sim_inject_uart_bytes("T3\n");
   run_sim(3000);
   float iq = model_motor.current_q();
-  printf("        iq=%.3f A (target 3, limit 2, IPROPI clamp ~1.14)\n", iq);
-  // 电流被限制（要么到 2A 限流，要么被 IPROPI 量程钳位——都远小于 3）
+  printf("        iq=%.3f A (target 3, limit 2)\n", iq);
+  // 电流被限制（限流 2A 生效，远小于 3A 目标）
   check(iq < 2.2f && iq > 0.3f, "current is limited well below 3A target");
   check(fabsf(model_motor.current_q()) > 0.0f, "motor still producing torque");
   sim_inject_uart_bytes("T0\n");

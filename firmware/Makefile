@@ -70,6 +70,7 @@ Core/Src/syscalls.c
 # C++ sources: SimpleFOC 纯算法核心 + 本项目 App
 CXX_SOURCES =  \
 App/platform/platform.cpp \
+App/platform/print.cpp \
 App/platform/hardware_uart_stream.cpp \
 App/drivers/hardware_api_stm32.cpp \
 App/drivers/drv8316ct.cpp \

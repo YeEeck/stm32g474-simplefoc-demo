@@ -16,6 +16,10 @@ struct __FlashStringHelper;
 #define F(s) ((const __FlashStringHelper*)(s))
 #define PROGMEM
 typedef const char* PGM_P;
+// Arduino String 的拼接助手（SimpleFOCDebug 用，本项目不使用）
+struct StringSumHelper {
+  const char* c_str() const { return ""; }
+};
 
 // ---- 引脚常量（本项目不使用 Arduino 引脚 API 的运行时功能）----
 #define HIGH 0x1
@@ -66,6 +70,15 @@ public:
   using Print::print;
   using Print::println;
 };
+
+// SimpleFOCDebug 默认输出指向 Serial：提供 stub 实例（仅 SIL 使用，固件编译无害）
+class StubSerialStream : public Stream {
+public:
+  int available() override { return 0; }
+  int read() override { return -1; }
+  size_t write(uint8_t) override { return 1; }
+};
+extern StubSerialStream Serial;
 
 // ---- 杂项 ----
 #include <ctype.h>

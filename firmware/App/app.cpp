@@ -74,6 +74,7 @@ void app_init(void) {
   motor.linkDriver(&driver);
   motor.linkSensor(&encoder);
   motor.linkCurrentSense(&current_sense);
+  current_sense.linkDriver(&driver); // initFOC 的电流采样对齐需要知道驱动类型
 
   motor.controller = MotionControlType::torque;
   motor.torque_controller = TorqueControlType::foc_current;

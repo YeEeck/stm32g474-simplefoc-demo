@@ -41,6 +41,7 @@ virtualFolder:
     - path: ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_adc_ex.c
     - path: ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_ll_adc.c
     - path: ../App/platform/platform.cpp
+    - path: ../App/platform/print.cpp
     - path: ../App/platform/hardware_uart_stream.cpp
     - path: ../App/drivers/hardware_api_stm32.cpp
     - path: ../App/drivers/drv8316ct.cpp

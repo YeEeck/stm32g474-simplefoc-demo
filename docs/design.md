@@ -48,11 +48,11 @@
 | 功能 | 引脚 | 外设配置 |
 |---|---|---|
 | INH_A/B/C | PA8 / PA9 / PA10 | TIM1 CH1/CH2/CH3，PWM 20kHz 中心对齐 |
-| SOA/SOB/SOC | PA0 / PA1 / PA4 | ADC1 IN1/IN2/IN4，TIM1 触发注入采样 |
+| SOA/SOB/SOC | PA0 / PA1 / PA3 | ADC1 IN1/IN2/IN4，TIM1 触发注入采样 |
 | MT6701 A/B | PA6 / PA7 | TIM3 CH1/CH2 编码器模式（4x 解码） |
-| MT6701 Z | PB4 | GPIO EXTI 中断输入 |
+| MT6701 Z | PB4 | GPIO EXTI 中断输入（下降沿，内部上拉） |
 | nSLEEP | PC7 | GPIO 推挽输出（拉高唤醒 DRV8316CT） |
-| UART TX/RX | PA2 / PA3 | USART2，115200 8N1，外接 USB-TTL（DAP 虚拟串口可用） |
+| UART TX/RX | PD5 / PD6 | USART2，115200 8N1，外接 USB-TTL（DAP 虚拟串口可用） |
 
 未使用：SPI（DRV8316CT 无 SPI）、nFAULT（未接出）、INLx（驱动板已接地）。
 

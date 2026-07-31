@@ -4,7 +4,7 @@
 
 ## 1. 时钟树
 
-- HSE = 8 MHz（板上 8 MHz 有源晶振）
+- HSE = 8 MHz 有源晶振，选择 **Bypass Clock Source**（外部时钟源模式，仅占 PF0；PF1 释放。晶体模式 RCC_HSE_ON 会驱动 OSC_IN，与有源晶振冲突）
 - SYSCLK = 170 MHz（G474 最高主频，经 PLL 倍频）
 - ADC 时钟由 CubeMX 自动分配（ADC 高速时钟经 PLL，采样时钟 ≤ 60 MHz）
 
@@ -22,16 +22,16 @@
 | 互补通道 | 不需要（3PWM，INLx 板上接地） |
 | TRGO2 | 触发输出选择 Update 事件（或上溢/下溢，用于触发 ADC1 注入采样） |
 
-### 2.2 ADC1 — 三路电流采样（PA0/PA1/PA4）
+### 2.2 ADC1 — 三路电流采样（PA0/PA1/PA3）
 
 | 项 | 值 |
 |---|---|
-| 通道 | IN1（PA0）、IN2（PA1）、IN4（PA4） |
+| 通道 | IN1（PA0）、IN2（PA1）、IN4（PA3） |
 | 注入组（Injected Group） | 三个通道全部加入注入序列 |
 | 触发源 | TIM1 TRGO2（外部触发） |
 | 分辨率 | 12 bit |
 | 采样时间 | 先短（如 2.5–8 cycles），调参时按需调整 |
-| 注入转换完成中断 | 开启（SimpleFOC 电流环同步读值） |
+| 注入转换完成中断 | 开启（NVIC 勾选 ADC1_2 global interrupt） |
 
 ### 2.3 TIM3 — 编码器接口（PA6/PA7）
 
@@ -47,9 +47,9 @@
 | 引脚 | 模式 | 说明 |
 |---|---|---|
 | PC7 | GPIO 输出，推挽，初始电平 Low | nSLEEP（上电保持低 → 代码拉高唤醒） |
-| PB4 | GPIO 输入，EXTI 中断（下降沿或双沿，Z 极性以实测为准） | MT6701 Z 索引 |
+| PB4 | GPIO 输入，EXTI 下降沿中断（External Interrupt Mode with Falling edge detection），内部上拉 | MT6701 Z 索引 |
 
-### 2.5 USART2 — 调试/指令串口（PA2/PA3）
+### 2.5 USART2 — 调试/指令串口（PD5/PD6）
 
 - 异步 115200，8N1，无流控
 - 物理串口外接：USB-TTL 转接模块或 DAP-Link 虚拟串口（TX→RX 交叉接线）

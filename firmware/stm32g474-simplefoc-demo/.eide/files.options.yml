@@ -16,5 +16,7 @@
 version: "2.1"
 options:
     Debug:
-        files: {}
+        files:
+            # SimpleFOC 上游源码的已知无害告警（未使用变量 / switch 缺 case），按目录降噪
+            '../vendors/simplefoc/**/*.cpp': '-Wno-unused-variable -Wno-unused-but-set-variable -Wno-switch'
         virtualPathFiles: {}

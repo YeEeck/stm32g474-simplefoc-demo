@@ -5,6 +5,7 @@
 #include <cstdio>
 #include <cstring>
 #include <cmath>
+#include <new>
 
 #include "stm32g4xx_hal.h"
 #include "adc.h"
@@ -26,6 +27,7 @@ void sim_inject_uart_bytes(const char* s);
 uint32_t sim_get_pwm_arr();
 float sim_get_phase_voltage(int ch);
 uint32_t sim_get_encoder_cnt();
+void sim_freeze_encoder(bool freeze);
 GPIO_PinState sim_get_nsleep();
 void sim_set_phase_currents(float ia, float ib, float ic, float offset_v, float gain_v_per_a);
 }
@@ -147,6 +149,159 @@ static bool test_stop_and_protocol() {
   return true;
 }
 
+// 带采样回调的仿真：每 sample_ms 毫秒回调一次（观测动态过程）
+template <typename Sampler>
+static void run_sim_sampled(uint32_t ms, uint32_t sample_ms, Sampler&& sampler) {
+  uint32_t steps = ms * 1000u / (uint32_t)(DT * 1e6f);
+  uint32_t sample_interval = sample_ms * 1000u / (uint32_t)(DT * 1e6f);
+  uint32_t loop_counter = 0;
+  uint32_t sample_counter = 0;
+  for (uint32_t i = 0; i < steps; i++) {
+    sim_advance_time_us((uint32_t)(DT * 1e6f));
+    float ccr[3];
+    uint32_t arr = sim_get_pwm_arr();
+    for (int ch = 0; ch < 3; ch++) ccr[ch] = sim_get_phase_voltage(ch + 1);
+    model_motor.step(DT, arr, ccr);
+    HAL_ADCEx_InjectedConvCpltCallback(&hadc1);
+    if (++loop_counter >= LOOP_INTERVAL_US / (uint32_t)(DT * 1e6f)) {
+      loop_counter = 0;
+      app_loop();
+    }
+    if (++sample_counter >= sample_interval) {
+      sample_counter = 0;
+      sampler(i * (uint32_t)(DT * 1e6f) / 1000u, model_motor);
+    }
+  }
+}
+
+// ---- 测试 4：限流（current_limit=2A 生效；IPROPI 量程 ±1.14A 钳位）----
+static bool test_current_limit() {
+  printf("[TEST] current limit (T3 > limit 2A, IPROPI range clamp)\n");
+  model_motor.reset();
+  sim_inject_uart_bytes("T3\n");
+  run_sim(3000);
+  float iq = model_motor.current_q();
+  printf("        iq=%.3f A (target 3, limit 2, IPROPI clamp ~1.14)\n", iq);
+  // 电流被限制（要么到 2A 限流，要么被 IPROPI 量程钳位——都远小于 3）
+  check(iq < 2.2f && iq > 0.3f, "current is limited well below 3A target");
+  check(fabsf(model_motor.current_q()) > 0.0f, "motor still producing torque");
+  sim_inject_uart_bytes("T0\n");
+  run_sim(500);
+  return true;
+}
+
+// ---- 测试 5：动态响应（T0.5 阶跃的收敛时间与超调）----
+static bool test_dynamic_response() {
+  printf("[TEST] dynamic response (T0.5 step)\n");
+  model_motor.reset();
+  sim_inject_uart_bytes("T0.5\n");
+  float settle_t = -1.0f, peak_iq = 0.0f, final_iq = 0.0f;
+  int entered = 0;
+  float prev = 0.0f;
+  run_sim_sampled(200, 1, [&](uint32_t t_ms, const MotorModel& m) {
+    float iq = m.current_q();
+    if (iq > 0.2f && !entered) entered = 1;
+    if (entered && iq > 0.45f && settle_t < 0) settle_t = (float)t_ms;
+    if (fabsf(iq) > peak_iq) peak_iq = fabsf(iq);
+    final_iq = iq;
+    prev = iq;
+  });
+  printf("        settle@~%.0fms (|iq|>0.45), peak iq=%.3f, final iq=%.3f\n",
+         settle_t, peak_iq, final_iq);
+  check(settle_t > 0 && settle_t < 60.0f, "q current settles within 60ms");
+  float overshoot = (peak_iq - 0.5f) / 0.5f;
+  check(overshoot < 0.5f, "overshoot < 50%");
+  sim_inject_uart_bytes("T0\n");
+  run_sim(500);
+  return true;
+}
+
+// ---- 测试 6：正反转（T-0.5 → 反向转动）----
+static bool test_reverse_direction() {
+  printf("[TEST] reverse direction (T-0.5)\n");
+  model_motor.reset();
+  sim_inject_uart_bytes("T-0.5\n");
+  run_sim(3000);
+  printf("        omega=%.2f rad/s, iq=%.3f A\n", model_motor.velocity(), model_motor.current_q());
+  check(model_motor.velocity() < -2.0f, "motor rotates in reverse (omega<-2)");
+  sim_inject_uart_bytes("T0\n");
+  run_sim(500);
+  return true;
+}
+
+// ---- 测试 7：编码器冻结 → 电压对齐失败，错误路径正确 ----
+#include <pthread.h>
+#include <unistd.h>
+
+// 重建固件全局对象（模拟重新上电）
+#include "drivers/BLDCDriver3PWM.h"
+#include "drivers/drv8316ct.h"
+#include "sensors/tim_encoder.h"
+#include "sensors/iprop_current_sense.h"
+#include "communication/Commander.h"
+extern BLDCDriver3PWM driver;
+extern TimEncoder encoder;
+extern IpropCurrentSense current_sense;
+extern Commander commander;
+extern volatile bool foc_gate_open;
+extern TIM_HandleTypeDef htim3;
+static void firmware_reset() {
+  new (&driver) BLDCDriver3PWM(0, 1, 2);
+  new (&encoder) TimEncoder(&htim3);
+  new (&current_sense) IpropCurrentSense(&hadc1, 1.45f);
+  new (&motor) BLDCMotor(11, 5.4f, 54.0f);
+  new (&commander) Commander(HardwareUartStream::instance(), '\n', false);
+  foc_gate_open = false;
+}
+
+static void* align_fail_thread(void*) {
+  app_init(); // 预期：打印 "initFOC failed" 后进入 while(1) 死循环（固件错误路径）
+  return nullptr;
+}
+static bool test_align_failure_path() {
+  printf("[TEST] alignment failure path (encoder frozen)\n");
+  firmware_reset(); // 重新上电语义：清除前序测试对全局状态的污染
+  model_motor.reset();
+  sim_freeze_encoder(true); // 传感器读数冻结 → 方向检测 moved≈0 → 对齐失败
+  sim_clear_uart_out();
+  pthread_t th;
+  pthread_create(&th, nullptr, align_fail_thread, nullptr);
+  // 等待错误输出（最多 5 秒真实时间）
+  bool seen = false;
+  for (int i = 0; i < 500; i++) {
+    usleep(10000);
+    if (uart_contains("initFOC failed")) { seen = true; break; }
+  }
+  check(seen, "error path prints 'initFOC failed' and does not enable motor");
+  if (!seen) {
+    size_t len = sim_get_uart_out_len();
+    const uint8_t* buf = sim_get_uart_out();
+    printf("        uart[%zu]: %s\n", len, (const char*)buf);
+  }
+  check(sim_get_nsleep() == GPIO_PIN_SET, "driver stays woken (no spurious shutdown)");
+  sim_freeze_encoder(false);
+  return true;
+}
+
+// ---- 测试 8：长时间稳定性（60s 仿真，无 NaN/无漂移）----
+static bool test_long_run_stability() {
+  printf("[TEST] long-run stability (60s sim)\n");
+  model_motor.reset();
+  sim_inject_uart_bytes("T0.5\n");
+  float omega_start = 0, omega_end = 0;
+  bool nan_detected = false;
+  run_sim_sampled(60000, 1000, [&](uint32_t, const MotorModel& m) {
+    if (!isfinite(m.velocity()) || !isfinite(m.current_a())) nan_detected = true;
+  });
+  omega_end = model_motor.velocity();
+  printf("        omega=%.2f rad/s after 60s\n", omega_end);
+  check(!nan_detected, "no NaN in state over 60s");
+  check(fabsf(omega_end - 3.45f) < 0.3f, "steady-state omega stable (~3.45)");
+  sim_inject_uart_bytes("T0\n");
+  run_sim(500);
+  return true;
+}
+
 int main() {
   setbuf(stdout, nullptr);
   printf("=== SIL pre-test (STM32G474 simplefoc torque demo) ===\n");
@@ -169,6 +324,11 @@ int main() {
   test_startup();
   test_torque_control();
   test_stop_and_protocol();
+  test_current_limit();
+  test_dynamic_response();
+  test_reverse_direction();
+  test_long_run_stability();
+  test_align_failure_path(); // 放最后：app_init 卡在 while(1)（固件错误路径），由线程承载
 
   printf("=== result: %s (%d checks passed) ===\n", g_fail ? "FAIL" : "PASS", g_pass);
   return g_fail ? 1 : 0;

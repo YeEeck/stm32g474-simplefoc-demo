@@ -39,7 +39,7 @@ OBJS = $(SRCS:.cpp=.o)
 all: sil_test
 
 sil_test: $(OBJS)
-	$(CXX) $(OBJS) -o $@
+	$(CXX) $(OBJS) -lpthread -o $@
 
 %.o: %.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@

@@ -23,9 +23,18 @@ static volatile uint32_t sim_time_us_ = 0;   // 由仿真主循环推进
 static GPIO_PinState nsleep_state_ = GPIO_PIN_RESET;
 static uint8_t uart_out_[2048];
 static size_t uart_out_len_ = 0;
+static bool encoder_frozen_ = false;
+static uint32_t lcg_state_ = 0x12345678u; // ADC 噪声伪随机源
 
 // HAL_Delay 期间推进仿真：SIL 注册电机模型步进函数
 void (*g_sil_delay_hook)(uint32_t ms) = nullptr;
+
+// IPROPI 输出范围（0 ~ 3.3V，中心 1.65V）→ 电流量程 ±1.14A @1.45V/A
+static float clamp_ipropi_voltage(float v) {
+  if (v < 0.0f) return 0.0f;
+  if (v > 3.3f) return 3.3f;
+  return v;
+}
 
 extern "C" {
 
@@ -36,11 +45,25 @@ void sim_advance_time_us(uint32_t us) {
 }
 GPIO_PinState sim_get_nsleep() { return nsleep_state_; }
 void sim_set_phase_currents(float ia, float ib, float ic, float offset_v, float gain_v_per_a) {
-  adc1_regs.JDR1 = (uint32_t)((offset_v + ia * gain_v_per_a) / 3.3f * 4096.0f);
-  adc1_regs.JDR2 = (uint32_t)((offset_v + ib * gain_v_per_a) / 3.3f * 4096.0f);
-  adc1_regs.JDR3 = (uint32_t)((offset_v + ic * gain_v_per_a) / 3.3f * 4096.0f);
+  // 真实硬件行为：IPROPI 输出限幅（0~3.3V）+ ADC 量化 + 采样噪声（±2 LSB）
+  auto raw = [&](float i) {
+    float v = clamp_ipropi_voltage(offset_v + i * gain_v_per_a);
+    lcg_state_ = lcg_state_ * 1664525u + 1013904223u;
+    int32_t noise = (int32_t)((lcg_state_ >> 16) % 5) - 2; // -2..+2 LSB
+    int32_t lsb = (int32_t)(v / 3.3f * 4096.0f) + noise;
+    if (lsb < 0) lsb = 0;
+    if (lsb > 4095) lsb = 4095;
+    return (uint32_t)lsb;
+  };
+  adc1_regs.JDR1 = raw(ia);
+  adc1_regs.JDR2 = raw(ib);
+  adc1_regs.JDR3 = raw(ic);
 }
 uint32_t sim_get_encoder_cnt() { return tim3_regs.CNT; }
+void sim_set_encoder_cnt(uint32_t cnt) {
+  if (!encoder_frozen_) tim3_regs.CNT = cnt;
+}
+void sim_freeze_encoder(bool freeze) { encoder_frozen_ = freeze; }
 float sim_get_phase_voltage(int ch) { // ch: 1..3，读 TIM1 CCR（驱动输出）
   return ch == 1 ? (float)tim1_regs.CCR1 : ch == 2 ? (float)tim1_regs.CCR2 : (float)tim1_regs.CCR3;
 }

@@ -8,11 +8,6 @@ void sim_set_phase_currents(float ia, float ib, float ic, float offset_v, float 
 void sim_set_encoder_cnt(uint32_t cnt);
 }
 
-void sim_set_encoder_cnt(uint32_t cnt) {
-  extern TIM_TypeDef tim3_regs;
-  tim3_regs.CNT = cnt;
-}
-
 void MotorModel::reset() {
   ia_ = ib_ = ic_ = 0;
   // 初始转子角取非对齐值（真实上电时转子在任意位置；若与电压矢量同轴会零扭矩死锁）

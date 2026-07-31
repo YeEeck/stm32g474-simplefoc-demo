@@ -19,10 +19,10 @@ public:
   static constexpr float B = 0.05f;         // 粘滞摩擦负载 N·m·s/rad（对齐 3V 下稳态 ~4 rad/s）
   static constexpr float CPR4 = 4096.0f;    // 编码器 4x 计数/圈
 
-  // 母线电压、IPROPI 零电流电平与增益（与固件配置一致）
+  // 母线电压、IPROPI 参考与增益（与固件配置一致；VREF=3.3V，GCSA 按 0.6 V/A 档）
   static constexpr float VBUS = 24.0f;
-  static constexpr float IPROPI_OFFSET_V = 1.65f;
-  static constexpr float IPROPI_GAIN = 1.45f; // V/A
+  static constexpr float IPROPI_OFFSET_V = 1.65f; // = VREF/2
+  static constexpr float IPROPI_GAIN = 0.6f;      // V/A（量程 ±2.75A）
 
   void reset();
   // 步进 dt 秒：读 PWM 占空比（经 sim 接口）→ 更新电流/机械/编码器/IPROPI

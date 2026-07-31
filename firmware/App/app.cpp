@@ -19,7 +19,9 @@ extern UART_HandleTypeDef huart2;
 // pin 参数在 HAL 适配层中不使用，占位即可
 BLDCDriver3PWM driver = BLDCDriver3PWM(0, 1, 2);
 TimEncoder encoder(&htim3);
-IpropCurrentSense current_sense(&hadc1, 1.45f); // gain 默认 1.45 V/A，调参时标定
+// CSA 增益由板上 GAIN 引脚配置决定（0.15/0.3/0.6/1.2 V/A）：
+// 默认按 0.6 V/A（GAIN=47kΩ→AVDD），上板后按实际配置与实测标定修正（见 docs/design.md）
+IpropCurrentSense current_sense(&hadc1, 0.6f);
 BLDCMotor motor = BLDCMotor(11, 5.4f, 54.0f);
 Commander commander = Commander(HardwareUartStream::instance(), '\n', false);
 

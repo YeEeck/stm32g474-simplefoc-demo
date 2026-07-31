@@ -108,6 +108,8 @@ void app_init(void) {
   foc_gate_open = true;
 
   motor.useMonitoring(HardwareUartStream::instance());
+  // 监控输出：target、Vq、Iq(mA)、速度、角度（便于上板验证）
+  motor.monitor_variables = _MON_TARGET | _MON_VOLT_Q | _MON_CURR_Q | _MON_VEL | _MON_ANGLE;
   commander.add('M', cmd_motor, "motor");
   commander.add('T', cmd_target, "target");
   commander.add('C', cmd_motion, "motion control");

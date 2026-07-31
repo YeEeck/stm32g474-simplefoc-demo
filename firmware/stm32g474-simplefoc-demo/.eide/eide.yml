@@ -7,57 +7,53 @@ srcDirs: []
 virtualFolder:
   name: <virtual_root>
   files:
-    # ---- CubeMX 生成的 C 源（../ = firmware/ 根）----
-    - ../Core/Src/main.c
-    - ../Core/Src/gpio.c
-    - ../Core/Src/adc.c
-    - ../Core/Src/tim.c
-    - ../Core/Src/usart.c
-    - ../Core/Src/stm32g4xx_it.c
-    - ../Core/Src/stm32g4xx_hal_msp.c
-    - ../Core/Src/system_stm32g4xx.c
-    - ../Core/Src/sysmem.c
-    - ../Core/Src/syscalls.c
-    # ---- HAL 驱动（与 Makefile C_SOURCES 一致）----
-    - ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal.c
-    - ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_rcc.c
-    - ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_rcc_ex.c
-    - ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_flash.c
-    - ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_flash_ex.c
-    - ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_flash_ramfunc.c
-    - ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_gpio.c
-    - ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_exti.c
-    - ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_dma.c
-    - ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_dma_ex.c
-    - ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_pwr.c
-    - ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_pwr_ex.c
-    - ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_cortex.c
-    - ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim.c
-    - ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim_ex.c
-    - ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_uart.c
-    - ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_uart_ex.c
-    - ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_adc.c
-    - ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_adc_ex.c
-    - ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_ll_adc.c
-    # ---- 本项目 App ----
-    - ../App/platform/platform.cpp
-    - ../App/platform/hardware_uart_stream.cpp
-    - ../App/drivers/hardware_api_stm32.cpp
-    - ../App/drivers/drv8316ct.cpp
-    - ../App/sensors/tim_encoder.cpp
-    - ../App/sensors/iprop_current_sense.cpp
-    - ../App/app.cpp
-    # ---- SimpleFOC 核心（纯算法，与 Makefile CXX_SOURCES 一致）----
-    - ../vendors/simplefoc/src/BLDCMotor.cpp
-    - ../vendors/simplefoc/src/common/foc_utils.cpp
-    - ../vendors/simplefoc/src/common/lowpass_filter.cpp
-    - ../vendors/simplefoc/src/common/pid.cpp
-    - ../vendors/simplefoc/src/common/time_utils.cpp
-    - ../vendors/simplefoc/src/common/base_classes/CurrentSense.cpp
-    - ../vendors/simplefoc/src/common/base_classes/FOCMotor.cpp
-    - ../vendors/simplefoc/src/common/base_classes/Sensor.cpp
-    - ../vendors/simplefoc/src/communication/Commander.cpp
-    - ../vendors/simplefoc/src/drivers/BLDCDriver3PWM.cpp
+    - path: ../Core/Src/main.c
+    - path: ../Core/Src/gpio.c
+    - path: ../Core/Src/adc.c
+    - path: ../Core/Src/tim.c
+    - path: ../Core/Src/usart.c
+    - path: ../Core/Src/stm32g4xx_it.c
+    - path: ../Core/Src/stm32g4xx_hal_msp.c
+    - path: ../Core/Src/system_stm32g4xx.c
+    - path: ../Core/Src/sysmem.c
+    - path: ../Core/Src/syscalls.c
+    - path: ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal.c
+    - path: ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_rcc.c
+    - path: ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_rcc_ex.c
+    - path: ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_flash.c
+    - path: ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_flash_ex.c
+    - path: ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_flash_ramfunc.c
+    - path: ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_gpio.c
+    - path: ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_exti.c
+    - path: ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_dma.c
+    - path: ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_dma_ex.c
+    - path: ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_pwr.c
+    - path: ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_pwr_ex.c
+    - path: ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_cortex.c
+    - path: ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim.c
+    - path: ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim_ex.c
+    - path: ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_uart.c
+    - path: ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_uart_ex.c
+    - path: ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_adc.c
+    - path: ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_adc_ex.c
+    - path: ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_ll_adc.c
+    - path: ../App/platform/platform.cpp
+    - path: ../App/platform/hardware_uart_stream.cpp
+    - path: ../App/drivers/hardware_api_stm32.cpp
+    - path: ../App/drivers/drv8316ct.cpp
+    - path: ../App/sensors/tim_encoder.cpp
+    - path: ../App/sensors/iprop_current_sense.cpp
+    - path: ../App/app.cpp
+    - path: ../vendors/simplefoc/src/BLDCMotor.cpp
+    - path: ../vendors/simplefoc/src/common/foc_utils.cpp
+    - path: ../vendors/simplefoc/src/common/lowpass_filter.cpp
+    - path: ../vendors/simplefoc/src/common/pid.cpp
+    - path: ../vendors/simplefoc/src/common/time_utils.cpp
+    - path: ../vendors/simplefoc/src/common/base_classes/CurrentSense.cpp
+    - path: ../vendors/simplefoc/src/common/base_classes/FOCMotor.cpp
+    - path: ../vendors/simplefoc/src/common/base_classes/Sensor.cpp
+    - path: ../vendors/simplefoc/src/communication/Commander.cpp
+    - path: ../vendors/simplefoc/src/drivers/BLDCDriver3PWM.cpp
   folders: []
 dependenceList: []
 outDir: build
@@ -71,7 +67,7 @@ targets:
         - USE_HAL_DRIVER
         - SIMPLEFOC_DISABLE_DEBUG
       incList:
-        # 顺序敏感：App/platform 必须在 vendors/simplefoc/src 之前（Arduino.h 兼容层）
+        - .
         - ../Core/Inc
         - ../Drivers/STM32G4xx_HAL_Driver/Inc
         - ../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy

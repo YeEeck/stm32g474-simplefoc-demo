@@ -57,7 +57,7 @@
 /* External variables --------------------------------------------------------*/
 extern ADC_HandleTypeDef hadc1;
 /* USER CODE BEGIN EV */
-
+extern UART_HandleTypeDef huart2;
 /* USER CODE END EV */
 
 /******************************************************************************/
@@ -211,6 +211,19 @@ void ADC1_2_IRQHandler(void)
 
   /* USER CODE END ADC1_2_IRQn 1 */
 }
+
+/* USER CODE BEGIN 1 */
+/* CubeMX 未使能这两个外设的 NVIC，中断处理函数补在用户区（App 初始化里使能 NVIC） */
+void EXTI4_IRQHandler(void)
+{
+  HAL_GPIO_EXTI_IRQHandler(Z_INDEX_Pin);
+}
+
+void USART2_IRQHandler(void)
+{
+  HAL_UART_IRQHandler(&huart2);
+}
+/* USER CODE END 1 */
 
 /* USER CODE BEGIN 1 */
 

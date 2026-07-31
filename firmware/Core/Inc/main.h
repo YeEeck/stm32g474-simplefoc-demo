@@ -41,7 +41,10 @@ extern "C" {
 
 /* Exported constants --------------------------------------------------------*/
 /* USER CODE BEGIN EC */
-
+#define NSLEEP_Pin       GPIO_PIN_7
+#define NSLEEP_GPIO_Port GPIOC
+#define Z_INDEX_Pin      GPIO_PIN_4
+#define Z_INDEX_GPIO_Port GPIOB
 /* USER CODE END EC */
 
 /* Exported macro ------------------------------------------------------------*/

@@ -2,6 +2,7 @@
 #define SIL_MOTOR_MODEL_H
 
 #include <stdint.h>
+#include <cmath>
 
 // 电机模拟：三相 RL 相模型 + 正弦反电动势 + 机械方程。
 // 输入：三相电压（来自 PWM 占空比 × 母线电压）

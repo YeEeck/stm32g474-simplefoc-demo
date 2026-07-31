@@ -35,13 +35,3 @@ void _writeDutyCycle3PWM(float dc_a, float dc_b, float dc_c, void* params) {
   __HAL_TIM_SET_COMPARE(p->tim, TIM_CHANNEL_2, ccr_b);
   __HAL_TIM_SET_COMPARE(p->tim, TIM_CHANNEL_3, ccr_c);
 }
-
-// 其他驱动模式未使用：提供空实现占位（SimpleFOC 链接需要符号）
-void* _configure1PWM(long, const int) { return (void*)-1; }
-void* _configure2PWM(long, const int, const int) { return (void*)-1; }
-void* _configure4PWM(long, const int, const int, const int, const int) { return (void*)-1; }
-void* _configure6PWM(long, float, const int, const int, const int, const int, const int, const int) { return (void*)-1; }
-void _writeDutyCycle1PWM(float, void*) {}
-void _writeDutyCycle2PWM(float, float, void*) {}
-void _writeDutyCycle4PWM(float, float, float, float, void*) {}
-void _writeDutyCycle6PWM(float, float, float, PhaseState*, void*) {}

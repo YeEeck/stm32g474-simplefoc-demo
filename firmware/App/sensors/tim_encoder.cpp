@@ -12,14 +12,11 @@ float TimEncoder::getSensorAngle() {
   return _2PI * (float)(cnt % CPR) / (float)CPR;
 }
 
-void TimEncoder::update() {
-  Sensor::update();
-}
-
 void TimEncoder::onIndexPulse() {
-  // Z 到达：将计数器校准到最近的整圈（0 … CPR-1 的 0 点附近）
+  // Z 到达：将计数器校准到最近的整圈零点（0 … CPR-1）
   uint32_t cnt = __HAL_TIM_GET_COUNTER(htim_);
   int32_t nearest = (int32_t)(_round((float)cnt / (float)CPR) * (float)CPR);
-  __HAL_TIM_SET_COUNTER(htim_, (uint32_t)nearest);
-  index_found_ = true;
+  int32_t corrected = nearest % (int32_t)CPR;
+  if (corrected < 0) corrected += CPR;
+  __HAL_TIM_SET_COUNTER(htim_, (uint32_t)corrected);
 }

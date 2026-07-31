@@ -130,15 +130,16 @@
 
 ## 6. 交互协议
 
-Commander 命令（USART2，115200，PA2/PA3 → 外接 USB-TTL 或 DAP-Link 虚拟串口）：
+Commander 命令（USART2，115200，PD5/PD6 → 外接 USB-TTL 或 DAP-Link 虚拟串口）：
 
 | 命令 | 功能 | 示例 |
 |---|---|---|
-| `T<电流>` | 设置目标电流（A） | `T0.5` |
-| `Q` | 查询状态（Studio） | `Q` |
-| `C<变量>` | 读取内部变量（Studio） | `CIq` |
+| `T<电流>` | 设置目标电流（A，torque 模式下 target 即电流） | `T0.5` |
+| `M<子命令>` | 电机参数/状态：PID（`MQ`/`MD`）、限幅（`MLC`/`MLU`）、调制方式等 | `MLC2` |
+| `C` | 运动控制类型（本项目固定 torque） | `C0` |
+| `?` | 扫描已注册命令标签（SimpleFOC Studio 连接握手） | `?` |
 
-SimpleFOC Studio 可直接连接串口实时查看角度/电流波形，用于电流环调参。
+SimpleFOC Studio 可直接连接串口，通过上述标准命令实时查看/设置电流环参数与目标电流。
 
 ## 7. 验证与调参计划（按序执行）
 

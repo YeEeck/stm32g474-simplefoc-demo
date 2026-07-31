@@ -12,10 +12,7 @@ public:
   TimEncoder(TIM_HandleTypeDef* htim) : htim_(htim) {}
 
   void init() override;
-  void update() override;
-  // 电压对齐校准即可完成初始化，不强制 Z 搜索
-  int needsSearch() override { return 0; }
-  bool hasIndex() const { return true; }
+  // 电压对齐校准即可完成初始化，不强制 Z 搜索（基类 needsSearch 默认返回 0）
 
   // 由 HAL_GPIO_EXTI_Callback 调用（中断上下文）：Z 脉冲到达
   void onIndexPulse();
@@ -24,7 +21,6 @@ private:
   float getSensorAngle() override;
 
   TIM_HandleTypeDef* htim_;
-  volatile bool index_found_ = false;
   static constexpr uint32_t CPR = 4096; // 4x 解码计数
 };
 

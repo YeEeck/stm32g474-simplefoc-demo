@@ -3,12 +3,10 @@
 #include "adc.h"
 #include "tim.h"
 
-#include <stdlib.h>
 // 按需引入 SimpleFOC 头（SimpleFOC.h 总入口会拉入 Arduino 库依赖如 SPI.h）
 #include "BLDCMotor.h"
 #include "drivers/BLDCDriver3PWM.h"
 #include "communication/Commander.h"
-#include "common/base_classes/CurrentSense.h"
 
 #include "platform/hardware_uart_stream.h"
 #include "drivers/drv8316ct.h"
@@ -25,6 +23,9 @@ IpropCurrentSense current_sense(&hadc1, 1.45f); // gain 默认 1.45 V/A，调参
 BLDCMotor motor = BLDCMotor(11, 5.4f, 54.0f);
 Commander commander = Commander(HardwareUartStream::instance(), '\n', false);
 
+// 零电流偏移校准完成前，禁止中断驱动电流环（避免以假读数驱动电机）
+volatile bool foc_gate_open = false;
+
 // SimpleFOC Studio 兼容：M/Q/D/V/L/C 等命令
 static void cmd_motor(char* cmd) { commander.motor(&motor, cmd); }
 static void cmd_target(char* cmd) { commander.target(&motor, cmd); }
@@ -32,7 +33,7 @@ static void cmd_motion(char* cmd) { commander.motion(&motor, cmd); }
 
 // ---- HAL 弱回调覆盖（中断上下文）----
 extern "C" void HAL_ADCEx_InjectedConvCpltCallback(ADC_HandleTypeDef* hadc) {
-  if (hadc == &hadc1) {
+  if (hadc == &hadc1 && foc_gate_open) {
     motor.loopFOC(); // 20kHz 电流环：由 PWM 中心触发的采样中断驱动
   }
 }
@@ -51,13 +52,18 @@ extern "C" void HAL_UART_RxCpltCallback(UART_HandleTypeDef* huart) {
 
 // ---- 启动流程 ----
 void app_init(void) {
-  // 1. DRV8316CT 唤醒（nSLEEP 拉高；VM 已由供电稳定）
+  // 1. DRV8316CT 唤醒（nSLEEP 拉高；VM 上电稳定预留 10ms）
+  HAL_Delay(10);
   drv8316ct::wakeup();
 
-  // 2. 各组件显式初始化（SimpleFOC 不自动调用；PWM 启动、注入转换使能）
-  driver.init();
+  // 2. 串口（NVIC + 中断接收）
+  HardwareUartStream::instance().init();
+
+  // 3. 各组件显式初始化（SimpleFOC 不自动调用）
+  driver.init();        // PWM 启动（TRGO2 触发注入转换）
+  current_sense.init(); // 注入转换开始（校准前 foc_gate 关闭，不会驱动电机）
+  current_sense.calibrateOffsets(32); // 电机静止、零电流 → 偏移基准
   encoder.init();
-  current_sense.init();
   HAL_NVIC_SetPriority(EXTI4_IRQn, 5, 0);
   HAL_NVIC_EnableIRQ(EXTI4_IRQn);
 
@@ -87,7 +93,6 @@ void app_init(void) {
     HardwareUartStream::instance().println("motor init failed");
     while (1) {}
   }
-  current_sense.calibrateOffsets(32);
 
   // 5. 电压对齐校准（电机会短暂转动/锁定）
   if (!motor.initFOC()) {
@@ -95,9 +100,10 @@ void app_init(void) {
     while (1) {}
   }
 
-  // 6. 使能 + 命令接口
+  // 6. 使能 + 命令接口；校准已完成，开放中断驱动的电流环
   motor.enable();
   motor.target = 0;
+  foc_gate_open = true;
 
   motor.useMonitoring(HardwareUartStream::instance());
   commander.add('M', cmd_motor, "motor");
@@ -109,4 +115,5 @@ void app_init(void) {
 
 void app_loop(void) {
   commander.run();
+  motor.move(); // torque 模式下将 target 同步到电流环给定（current_sp）
 }

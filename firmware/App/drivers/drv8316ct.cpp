@@ -8,8 +8,4 @@ bool wakeup() {
   return true;
 }
 
-void sleep() {
-  HAL_GPIO_WritePin(NSLEEP_GPIO_Port, NSLEEP_Pin, GPIO_PIN_RESET);
-}
-
 } // namespace drv8316ct

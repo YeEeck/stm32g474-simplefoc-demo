@@ -63,7 +63,7 @@ static void dwt_init() {
 unsigned long micros() {
   static bool initialized = false;
   if (!initialized) { dwt_init(); initialized = true; }
-  return DWT->CYCCNT / 170ul; // 170MHz 计数 → us
+  return DWT->CYCCNT / (SystemCoreClock / 1000000ul); // 周期计数 → us
 }
 
 void delay(unsigned long ms) { HAL_Delay(ms); }

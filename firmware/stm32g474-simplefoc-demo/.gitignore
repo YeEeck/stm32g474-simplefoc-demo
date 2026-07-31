@@ -16,3 +16,6 @@
 
 # EIDE 缓存（可重新下载）
 /.pack
+
+# EIDE 构建衍生文件
+/RTE_Components.h

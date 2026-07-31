@@ -1,0 +1,133 @@
+version: "4.1"
+name: stm32g474-simplefoc-demo
+type: ARM
+deviceName: STM32G474VETx
+packDir: .pack/Keil/STM32G4xx_DFP.1.1.0
+srcDirs: []
+virtualFolder:
+  name: <virtual_root>
+  files:
+    # ---- CubeMX 生成的 C 源（../ = firmware/ 根）----
+    - ../Core/Src/main.c
+    - ../Core/Src/gpio.c
+    - ../Core/Src/adc.c
+    - ../Core/Src/tim.c
+    - ../Core/Src/usart.c
+    - ../Core/Src/stm32g4xx_it.c
+    - ../Core/Src/stm32g4xx_hal_msp.c
+    - ../Core/Src/system_stm32g4xx.c
+    - ../Core/Src/sysmem.c
+    - ../Core/Src/syscalls.c
+    # ---- HAL 驱动（与 Makefile C_SOURCES 一致）----
+    - ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal.c
+    - ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_rcc.c
+    - ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_rcc_ex.c
+    - ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_flash.c
+    - ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_flash_ex.c
+    - ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_flash_ramfunc.c
+    - ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_gpio.c
+    - ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_exti.c
+    - ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_dma.c
+    - ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_dma_ex.c
+    - ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_pwr.c
+    - ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_pwr_ex.c
+    - ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_cortex.c
+    - ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim.c
+    - ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim_ex.c
+    - ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_uart.c
+    - ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_uart_ex.c
+    - ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_adc.c
+    - ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_adc_ex.c
+    - ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_ll_adc.c
+    # ---- 本项目 App ----
+    - ../App/platform/platform.cpp
+    - ../App/platform/hardware_uart_stream.cpp
+    - ../App/drivers/hardware_api_stm32.cpp
+    - ../App/drivers/drv8316ct.cpp
+    - ../App/sensors/tim_encoder.cpp
+    - ../App/sensors/iprop_current_sense.cpp
+    - ../App/app.cpp
+    # ---- SimpleFOC 核心（纯算法，与 Makefile CXX_SOURCES 一致）----
+    - ../vendors/simplefoc/src/BLDCMotor.cpp
+    - ../vendors/simplefoc/src/common/foc_utils.cpp
+    - ../vendors/simplefoc/src/common/lowpass_filter.cpp
+    - ../vendors/simplefoc/src/common/pid.cpp
+    - ../vendors/simplefoc/src/common/time_utils.cpp
+    - ../vendors/simplefoc/src/common/base_classes/CurrentSense.cpp
+    - ../vendors/simplefoc/src/common/base_classes/FOCMotor.cpp
+    - ../vendors/simplefoc/src/common/base_classes/Sensor.cpp
+    - ../vendors/simplefoc/src/communication/Commander.cpp
+    - ../vendors/simplefoc/src/drivers/BLDCDriver3PWM.cpp
+  folders: []
+dependenceList: []
+outDir: build
+miscInfo:
+  uid: 9b97f02588f37f1b1f9560d57517821d
+targets:
+  Debug:
+    cppPreprocessAttrs:
+      defineList:
+        - STM32G474xx
+        - USE_HAL_DRIVER
+        - SIMPLEFOC_DISABLE_DEBUG
+      incList:
+        # 顺序敏感：App/platform 必须在 vendors/simplefoc/src 之前（Arduino.h 兼容层）
+        - ../Core/Inc
+        - ../Drivers/STM32G4xx_HAL_Driver/Inc
+        - ../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy
+        - ../Drivers/CMSIS/Device/ST/STM32G4xx/Include
+        - ../Drivers/CMSIS/Include
+        - ../App
+        - ../App/platform
+        - ../App/drivers
+        - ../App/sensors
+        - ../vendors/simplefoc/src
+      libList: []
+    excludeList: []
+    settings:
+      debugger: cortex-debug
+    toolchain: GCC
+    toolchainConfigMap:
+      GCC:
+        archExtensions: ""
+        cpuType: Cortex-M4
+        floatingPointHardware: cortex-m4-sp
+        options:
+          version: 5
+          afterBuildTasks: []
+          asm-compiler:
+            ASM_FLAGS: ""
+          beforeBuildTasks: []
+          c/cpp-compiler:
+            CXX_FLAGS: -fno-exceptions -fno-rtti
+            C_FLAGS: ""
+            language-c: gnu11
+            language-cpp: c++17
+            one-elf-section-per-data: true
+            one-elf-section-per-function: true
+            optimization: level-debug
+            warnings: all-warnings
+          global:
+            $float-abi-type: hard
+            misc-control: ""
+            not-use-syscalls: true
+            output-debug-info: enable
+            use-newlib-nano: true
+          linker:
+            $outputTaskExcludes: []
+            LD_FLAGS: ""
+            LIB_FLAGS: -lm
+            output-format: elf
+            remove-unused-input-sections: true
+        scatterFilePath: ../STM32G474XX_FLASH.ld
+        storageLayout:
+          RAM: []
+          ROM: []
+        useCustomScatterFile: true
+    uploadConfigMap:
+      OpenOCD:
+        baseAddr: "0x08000000"
+        bin: ""
+        interface: cmsis-dap
+        target: stm32g4x
+    uploader: OpenOCD

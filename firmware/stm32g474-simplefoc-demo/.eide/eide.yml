@@ -7,9 +7,7 @@ srcDirs: []
 virtualFolder:
   name: <virtual_root>
   files:
-    # ---- 启动文件（CubeMX 生成，GNU 版；EIDE 不会自动添加）----
     - path: ../startup_stm32g474xx.s
-    # ---- CubeMX 生成的 C 源（../ = firmware/ 根）----
     - path: ../Core/Src/main.c
     - path: ../Core/Src/gpio.c
     - path: ../Core/Src/adc.c

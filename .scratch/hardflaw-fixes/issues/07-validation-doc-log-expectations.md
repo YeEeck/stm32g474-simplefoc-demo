@@ -1,6 +1,6 @@
 # 07 上板验证文档的启动日志与监控格式与实现不符
 
-Status: ready-for-agent
+Status: resolved
 
 ## 背景
 
@@ -21,3 +21,9 @@ Status: ready-for-agent
 ## 验收
 
 - SIL 全 PASS；固件交叉编译通过且 .elf 含 "Ready." 字符串；上板启动日志与文档一致。
+
+- 2026-08-01 修复并合入：
+
+## Comments
+
+- 2026-08-01 已修复（5021984 + 5895926）：固件两构建移除 SIMPLEFOC_DISABLE_DEBUG 并补编 SimpleFOCDebug.cpp，app_init 启用；文档改为真实启动日志（MOT: 前缀 + Success 语义）与 monitor 单位 A。

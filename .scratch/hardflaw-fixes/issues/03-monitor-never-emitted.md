@@ -1,6 +1,6 @@
 # 03 监控输出已配置但永不发送（monitor() 从未调用）
 
-Status: ready-for-agent
+Status: resolved
 
 ## 背景
 
@@ -18,3 +18,9 @@ Status: ready-for-agent
 ## 验收
 
 - SIL 全 PASS；固件交叉编译通过；上板串口每 ~100ms 一行 `target \t Vq \t Iq \t velocity \t angle`。
+
+- 2026-08-01 修复并合入：
+
+## Comments
+
+- 2026-08-01 已修复（5021984）：app_loop 追加 motor.monitor()；SIL test 2 断言 UART 出现 monitor 行（0.5000\t 打头）。

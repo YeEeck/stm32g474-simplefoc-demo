@@ -1,6 +1,6 @@
 # 02 Z 索引处理破坏已校准电角零位（且逻辑恒等于 0）
 
-Status: ready-for-agent
+Status: resolved
 
 ## 背景
 
@@ -22,3 +22,9 @@ Status: ready-for-agent
 
 - SIL 全 PASS；固件交叉编译通过。
 - 上板行为：转动中过 Z 不再引起角度/扭矩扰动。
+
+- 2026-08-01 修复并合入：
+
+## Comments
+
+- 2026-08-01 已修复（5021984）：删除 onIndexPulse() 与 app.cpp 的 EXTI4 接线/回调；hal_stubs 提供弱默认 HAL_GPIO_EXTI_Callback；SIL 新增 test_z_index_noop（注入 Z 脉冲断言计数连续）。CONTEXT.md/design.md 同步（Z 不参与对齐）。

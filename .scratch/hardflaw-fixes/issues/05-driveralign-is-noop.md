@@ -1,6 +1,6 @@
 # 05 电流采样相序自校正（driverAlign）为空操作
 
-Status: ready-for-agent
+Status: resolved
 
 ## 背景
 
@@ -18,3 +18,9 @@ Status: ready-for-agent
 ## 验收
 
 - SIL 全 PASS；固件交叉编译通过；上板 SOx 接错时 initFOC 输出 "CS: Switch A-B/A-C" 自愈。
+
+- 2026-08-01 修复并合入：
+
+## Comments
+
+- 2026-08-01 已修复（5021984 + b68793a）：IpropCurrentSense 委托基类 pinA/B/C 与 gain_a/b/c，基类 alignBLDCDriver 生效；另修复上游 _swap(c_a.b, c_a.b) 笔误（b68793a）；SIL 新增 test_phase_swap_self_correct（交换接线 → 自愈 → T0.5 收敛）。

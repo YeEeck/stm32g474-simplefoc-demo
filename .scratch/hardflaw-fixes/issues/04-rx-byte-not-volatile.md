@@ -1,6 +1,6 @@
 # 04 rx_byte_ 非 volatile（跨中断/回调共享）
 
-Status: ready-for-agent
+Status: resolved
 
 ## 背景
 
@@ -17,3 +17,9 @@ Status: ready-for-agent
 ## 验收
 
 - 固件交叉编译通过；SIL 全 PASS。
+
+- 2026-08-01 修复并合入：
+
+## Comments
+
+- 2026-08-01 已修复（5021984）：rx_byte_ 全链路补 volatile（含 SIL stub extern），HAL 调用处显式 (uint8_t*) 转型。

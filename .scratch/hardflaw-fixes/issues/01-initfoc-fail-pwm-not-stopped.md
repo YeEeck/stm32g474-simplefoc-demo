@@ -1,6 +1,6 @@
 # 01 initFOC 失败路径未停止 PWM，电机持续锁定电流
 
-Status: ready-for-agent
+Status: resolved
 
 ## 背景
 
@@ -21,3 +21,9 @@ Status: ready-for-agent
 
 - SIL 19+ 项全 PASS，新增断言在修复前失败、修复后通过。
 - 固件交叉编译通过。
+
+- 2026-08-01 修复并合入：
+
+## Comments
+
+- 2026-08-01 已修复（5021984）：app_init 失败路径调用 fatal_shutdown()（HAL_TIM_PWM_Stop ×3 + drv8316ct::sleep()）；SIL test 7 断言 PWM 停止（sim_get_pwm_started==false）且 nSLEEP 拉低。

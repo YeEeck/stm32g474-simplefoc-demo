@@ -29,7 +29,7 @@ static uint32_t lcg_state_ = 0x12345678u; // ADC 噪声伪随机源
 // HAL_Delay 期间推进仿真：SIL 注册电机模型步进函数
 void (*g_sil_delay_hook)(uint32_t ms) = nullptr;
 
-// IPROPI 输出范围（0 ~ 3.3V，中心 1.65V）→ 电流量程 ±1.14A @1.45V/A
+// IPROPI 输出范围（0 ~ 3.3V，中心 1.65V）→ 电流量程 ±11A @0.15 V/A（见电机配置）
 static float clamp_ipropi_voltage(float v) {
   if (v < 0.0f) return 0.0f;
   if (v > 3.3f) return 3.3f;

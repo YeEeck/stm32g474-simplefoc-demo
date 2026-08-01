@@ -4,6 +4,7 @@
 #include "main.h"
 #include "../../vendors/simplefoc/src/common/base_classes/Sensor.h"
 #include "../../vendors/simplefoc/src/common/foc_utils.h"
+#include "../motor_config.h"
 
 // MT6701 ABZ 编码器：TIM3 正交解码（4x，1024 线 → 4096 计数/圈）
 // Z 索引（PB4 EXTI 下降沿）将计数校准到最近的整圈。
@@ -21,7 +22,7 @@ private:
   float getSensorAngle() override;
 
   TIM_HandleTypeDef* htim_;
-  static constexpr uint32_t CPR = 4096; // 4x 解码计数
+  static constexpr uint32_t CPR = motor_config::encoder_cpr; // 4x 解码计数
 };
 
 #endif

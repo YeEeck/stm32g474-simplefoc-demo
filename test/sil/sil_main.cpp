@@ -12,6 +12,7 @@
 #include "motor_model.h"
 #include "BLDCMotor.h"
 #include "../../firmware/App/app.h"
+#include "../../firmware/App/motor_config.h"
 
 extern BLDCMotor motor; // app.cpp 全局对象
 
@@ -248,7 +249,7 @@ extern TIM_HandleTypeDef htim3;
 static void firmware_reset() {
   new (&driver) BLDCDriver3PWM(0, 1, 2);
   new (&encoder) TimEncoder(&htim3);
-  new (&current_sense) IpropCurrentSense(&hadc1, 1.45f);
+  new (&current_sense) IpropCurrentSense(&hadc1, motor_config::ipropi_gain_v_per_a);
   new (&motor) BLDCMotor(11, 5.4f, 54.0f);
   new (&commander) Commander(HardwareUartStream::instance(), '\n', false);
   foc_gate_open = false;
@@ -310,7 +311,7 @@ int main() {
   extern TIM_TypeDef tim1_regs;
   extern TIM_TypeDef tim3_regs;
   tim1_regs.ARR = 4249; // 20kHz 中心对齐
-  tim3_regs.ARR = 4095; // 编码器 4x
+  tim3_regs.ARR = motor_config::encoder_cpr - 1; // 编码器 4x（0…CPR-1 回绕）
   tim1_regs.RCR = 0;
   // IPROPI 静止基准（零电流）
   sim_set_phase_currents(0.0f, 0.0f, 0.0f, MotorModel::IPROPI_OFFSET_V, MotorModel::IPROPI_GAIN);

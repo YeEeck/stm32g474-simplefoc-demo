@@ -12,6 +12,7 @@
 #include "drivers/drv8316ct.h"
 #include "sensors/tim_encoder.h"
 #include "sensors/iprop_current_sense.h"
+#include "motor_config.h"
 
 extern UART_HandleTypeDef huart2;
 
@@ -19,9 +20,9 @@ extern UART_HandleTypeDef huart2;
 // pin 参数在 HAL 适配层中不使用，占位即可
 BLDCDriver3PWM driver = BLDCDriver3PWM(0, 1, 2);
 TimEncoder encoder(&htim3);
-// CSA 增益已确认：板上 GAIN 引脚接地 → 0.15 V/A（量程 ±11A @VREF=3.3V）
-IpropCurrentSense current_sense(&hadc1, 0.15f);
-BLDCMotor motor = BLDCMotor(11, 5.4f, 54.0f);
+// CSA 增益来自电机配置（GAIN 引脚接地 → 0.15 V/A，量程 ±11A @VREF=3.3V）
+IpropCurrentSense current_sense(&hadc1, motor_config::ipropi_gain_v_per_a);
+BLDCMotor motor = BLDCMotor(motor_config::pole_pairs, motor_config::phase_resistance_ohm, 54.0f);
 Commander commander = Commander(HardwareUartStream::instance(), '\n', false);
 
 // 零电流偏移校准完成前，禁止中断驱动电流环（避免以假读数驱动电机）
@@ -69,7 +70,7 @@ void app_init(void) {
   HAL_NVIC_EnableIRQ(EXTI4_IRQn);
 
   // 3. 电机配置：扭矩控制（电流环）
-  driver.voltage_power_supply = 24.0f;
+  driver.voltage_power_supply = motor_config::vbus_v;
   driver.pwm_frequency = 20000;
 
   motor.linkDriver(&driver);

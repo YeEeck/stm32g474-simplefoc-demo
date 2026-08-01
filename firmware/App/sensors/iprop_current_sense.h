@@ -22,7 +22,7 @@ private:
   static constexpr float ADC_VOLTAGE_CONV = 3.3f / 4096.0f;
 
   ADC_HandleTypeDef* hadc_;
-  float gain_v_per_a_; // IPROPI 增益 [V/A]，默认 1.45，需实测标定
+  float gain_v_per_a_; // IPROPI 增益 [V/A]，来自 motor_config（上板标定后改 motor_config.h）
 
   float sampleVoltage(int channel_index);
 };

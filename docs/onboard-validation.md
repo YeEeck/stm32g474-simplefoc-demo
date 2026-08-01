@@ -75,7 +75,7 @@ openocd -f interface/cmsis-dap.cfg -f target/stm32g4x.cfg \
 2. 观察启动日志
 
 **预期**：
-- 串口出现（约 1 秒内）：
+- 串口出现（约 3 秒内，电流采样相序校准含 2s 余量）：
   ```
   MOT:Init
   MOT:Enable driver.
@@ -83,7 +83,8 @@ openocd -f interface/cmsis-dap.cfg -f target/stm32g4x.cfg \
   MOT:sensor dir: CW        （或 CCW，取决于安装）
   MOT:Zero elec. angle: x.xx
   MOT:Align current sense.
-  MOT:Success: 1
+  CS: Switch A-B             （仅 SOx 接反且自校正发生时出现）
+  MOT:Success: 1             （2/3/4 = 发生相序/极性自校正）
   MOT:Ready.
   simplefoc torque demo ready: T<current>A
   ```
@@ -96,8 +97,8 @@ openocd -f interface/cmsis-dap.cfg -f target/stm32g4x.cfg \
 | 乱码 | 波特率/电平（3.3V TTL）；TX 接错 |
 | 卡在 `MOT:Init` 后无反应 | 驱动板 nSLEEP 未拉高？VM 未上电？检查 PC7 电平与 VM |
 | 卡在 `Align sensor.` 后打印 `Failed to notice movement` | 编码器接线/供电错误，角度无变化（见阶段 2） |
-| 卡在 `Align current sense.` 后打印 `Align error` | SOx 接线错误/未接；IPROPI 通道与相序不符 |
-| `Init FOC fail` | 上述任一对齐失败；检查各信号线 |
+| `Align error` / `Init FOC fail` | SOx 接线错误且自校正无法纠正（如两相同相）；电流过低时提高 `voltage_sensor_align` |
+| 失败后无输出且驱动板进入 sleep | 固件致命错误路径已停机（PWM 停止 + nSLEEP 拉低），复位重试 |
 
 ### 阶段 2：编码器验证
 
@@ -109,8 +110,8 @@ openocd -f interface/cmsis-dap.cfg -f target/stm32g4x.cfg \
 
 **预期**：
 - 角度随转动连续变化（0→2π 回绕），无跳变
-- monitor 行格式：`target \t Vq \t Iq(mA) \t velocity \t angle`
-- 每转一圈 Z 触发一次（计数器被校准，角度无累计漂移）
+- monitor 行格式：`target \t Vq \t Iq(A) \t velocity \t angle`（电流单位 A，4 位小数；每 ~100ms 一行）
+- Z 每圈一个脉冲（PB4）；当前对齐采用电压对齐，Z 不参与角度校准（角度以电压对齐零位为基准，过 Z 无扰动）
 
 **异常排查**：
 | 现象 | 排查 |
@@ -126,7 +127,7 @@ openocd -f interface/cmsis-dap.cfg -f target/stm32g4x.cfg \
 **步骤**：
 1. 静止、`T0` 状态下，串口 monitor 的 `Iq` 应 ≈ 0（±30mA 内）
 2. 固定转子（堵转）→ `T0.5` → 万用表串入任一相线测真实电流 I_real
-3. 对比 monitor 的 `Iq`（单位 mA）：`Iq_fw ≈ I_real`？
+3. 对比 monitor 的 `Iq`（单位 A，读数×1000 得 mA）：`Iq_fw ≈ I_real`？
 
 **预期**：`Iq_fw / I_real` 在 0.95~1.05 之间。
 

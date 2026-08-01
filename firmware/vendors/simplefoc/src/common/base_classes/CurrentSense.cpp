@@ -267,7 +267,7 @@ int CurrentSense::alignBLDCDriver(float voltage, BLDCDriver* bldc_driver, bool m
                 _swap(pinA, pinB);
                 _swap(offset_ia, offset_ib);
                 _swap(gain_a, gain_b);
-                _swap(c_a.b, c_a.b);
+                _swap(c_a.a, c_a.b); // 上游为 _swap(c_a.b, c_a.b)（no-op 笔误）：快照值不随映射交换 → 后续符号检查误判 "Inv A"
                 phases_switched = true; // signal that pins have been switched
                 break;
             case 2: // phase C is the max current

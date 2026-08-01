@@ -55,6 +55,7 @@ virtualFolder:
     - path: ../vendors/simplefoc/src/common/base_classes/FOCMotor.cpp
     - path: ../vendors/simplefoc/src/common/base_classes/Sensor.cpp
     - path: ../vendors/simplefoc/src/communication/Commander.cpp
+    - path: ../vendors/simplefoc/src/communication/SimpleFOCDebug.cpp
     - path: ../vendors/simplefoc/src/drivers/BLDCDriver3PWM.cpp
   folders: []
 dependenceList: []

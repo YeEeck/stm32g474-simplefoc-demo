@@ -86,6 +86,7 @@ vendors/simplefoc/src/common/base_classes/CurrentSense.cpp \
 vendors/simplefoc/src/common/base_classes/FOCMotor.cpp \
 vendors/simplefoc/src/common/base_classes/Sensor.cpp \
 vendors/simplefoc/src/communication/Commander.cpp \
+vendors/simplefoc/src/communication/SimpleFOCDebug.cpp \
 vendors/simplefoc/src/drivers/BLDCDriver3PWM.cpp
 
 # ASM sources
@@ -165,7 +166,7 @@ C_INCLUDES =  \
 ASFLAGS = $(MCU) $(AS_DEFS) $(AS_INCLUDES) $(OPT) -Wall -fdata-sections -ffunction-sections
 
 CFLAGS += $(MCU) $(C_DEFS) $(C_INCLUDES) $(OPT) -Wall -fdata-sections -ffunction-sections
-CXXFLAGS += $(MCU) $(C_DEFS) $(C_INCLUDES) $(OPT) -Wall -fdata-sections -ffunction-sections -std=gnu++17 -fno-exceptions -fno-rtti -DSIMPLEFOC_DISABLE_DEBUG
+CXXFLAGS += $(MCU) $(C_DEFS) $(C_INCLUDES) $(OPT) -Wall -fdata-sections -ffunction-sections -std=gnu++17 -fno-exceptions -fno-rtti
 
 ifeq ($(DEBUG), 1)
 CFLAGS += -g -gdwarf-2

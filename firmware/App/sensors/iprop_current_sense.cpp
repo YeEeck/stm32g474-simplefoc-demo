@@ -1,5 +1,15 @@
 #include "iprop_current_sense.h"
 
+// channel_index: 0/1/2 = SOA/SOB/SOC → 注入 rank 1/2/3（IN1/IN2/IN4）
+IpropCurrentSense::IpropCurrentSense(ADC_HandleTypeDef* hadc, float gain_v_per_a)
+    : hadc_(hadc) {
+  // 通道映射存入基类字段，使基类 driverAlign 的相序自校正（交换 pinA/B/C、offset、gain）生效
+  pinA = 0;
+  pinB = 1;
+  pinC = 2;
+  gain_a = gain_b = gain_c = gain_v_per_a; // IPROPI 增益 [V/A]，来自电机配置
+}
+
 int IpropCurrentSense::init() {
   // 使能注入组转换 + 中断（CubeMX 已配好触发源/通道/NVIC）
   if (HAL_ADCEx_InjectedStart_IT(hadc_) != HAL_OK) return 0;
@@ -16,13 +26,13 @@ float IpropCurrentSense::sampleVoltage(int channel_index) {
 }
 
 PhaseCurrent_s IpropCurrentSense::getPhaseCurrents() {
-  float va = sampleVoltage(0);
-  float vb = sampleVoltage(1);
-  float vc = sampleVoltage(2);
+  float va = sampleVoltage(pinA);
+  float vb = sampleVoltage(pinB);
+  float vc = sampleVoltage(pinC);
   PhaseCurrent_s currents;
-  currents.a = (va - offset_ia) / gain_v_per_a_;
-  currents.b = (vb - offset_ib) / gain_v_per_a_;
-  currents.c = (vc - offset_ic) / gain_v_per_a_;
+  currents.a = (va - offset_ia) / gain_a;
+  currents.b = (vb - offset_ib) / gain_b;
+  currents.c = (vc - offset_ic) / gain_c;
   return currents;
 }
 

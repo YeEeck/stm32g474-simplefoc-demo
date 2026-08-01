@@ -24,6 +24,8 @@ static GPIO_PinState nsleep_state_ = GPIO_PIN_RESET;
 static uint8_t uart_out_[2048];
 static size_t uart_out_len_ = 0;
 static bool encoder_frozen_ = false;
+static bool pwm_started_ = false;   // TIM1 PWM 输出使能状态（致命错误停机断言用）
+static bool phases_swapped_ = false; // SOA/SOB 接线交换（driverAlign 自校正测试用）
 static uint32_t lcg_state_ = 0x12345678u; // ADC 噪声伪随机源
 
 // HAL_Delay 期间推进仿真：SIL 注册电机模型步进函数
@@ -55,8 +57,13 @@ void sim_set_phase_currents(float ia, float ib, float ic, float offset_v, float 
     if (lsb > 4095) lsb = 4095;
     return (uint32_t)lsb;
   };
-  adc1_regs.JDR1 = raw(ia);
-  adc1_regs.JDR2 = raw(ib);
+  if (phases_swapped_) { // 模拟 SOA/SOB 接反：JDR1 读到 B 相电流，JDR2 读到 A 相电流
+    adc1_regs.JDR1 = raw(ib);
+    adc1_regs.JDR2 = raw(ia);
+  } else {
+    adc1_regs.JDR1 = raw(ia);
+    adc1_regs.JDR2 = raw(ib);
+  }
   adc1_regs.JDR3 = raw(ic);
 }
 uint32_t sim_get_encoder_cnt() { return tim3_regs.CNT; }
@@ -73,16 +80,19 @@ size_t sim_get_uart_out_len() { return uart_out_len_; }
 const uint8_t* sim_get_uart_out() { return uart_out_; }
 void sim_inject_uart_bytes(const char* s) {
   extern void HAL_UART_RxCpltCallback(void* huart);
-  extern uint8_t rx_byte_;
+  extern volatile uint8_t rx_byte_;
   while (*s) {
     rx_byte_ = (uint8_t)*s++;
     HAL_UART_RxCpltCallback(&huart2);
   }
 }
 void sim_set_delay_hook(void (*hook)(uint32_t ms)) { g_sil_delay_hook = hook; }
+bool sim_get_pwm_started() { return pwm_started_; }
+void sim_swap_phases(bool swap) { phases_swapped_ = swap; }
 
 // ---- HAL 函数 stub ----
-HAL_StatusTypeDef HAL_TIM_PWM_Start(TIM_HandleTypeDef*, uint32_t) { return HAL_OK; }
+HAL_StatusTypeDef HAL_TIM_PWM_Start(TIM_HandleTypeDef*, uint32_t) { pwm_started_ = true; return HAL_OK; }
+HAL_StatusTypeDef HAL_TIM_PWM_Stop(TIM_HandleTypeDef*, uint32_t) { pwm_started_ = false; return HAL_OK; }
 HAL_StatusTypeDef HAL_TIM_Encoder_Start(TIM_HandleTypeDef*, uint32_t) { return HAL_OK; }
 HAL_StatusTypeDef HAL_ADCEx_InjectedStart_IT(ADC_HandleTypeDef*) { return HAL_OK; }
 uint32_t HAL_ADCEx_InjectedGetValue(const ADC_HandleTypeDef* hadc, uint32_t rank) {
@@ -110,5 +120,11 @@ HAL_StatusTypeDef HAL_UART_Transmit(UART_HandleTypeDef*, uint8_t* pData, uint16_
   return HAL_OK;
 }
 HAL_StatusTypeDef HAL_UART_Receive_IT(UART_HandleTypeDef*, uint8_t*, uint16_t) { return HAL_OK; }
+
+// 弱默认回调（镜像 ST 官方 weak 定义）：固件可强符号覆盖。
+// SIL 的 Z 索引测试通过它注入"Z 脉冲到达"，若固件重新挂接 Z 处理（会破坏电角零位），此处将命中强符号并被测试捕获。
+extern "C" __attribute__((weak)) void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
+  (void)GPIO_Pin;
+}
 
 } // extern "C"

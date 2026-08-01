@@ -69,7 +69,6 @@ targets:
       defineList:
         - STM32G474xx
         - USE_HAL_DRIVER
-        - SIMPLEFOC_DISABLE_DEBUG
       incList:
         - .
         - ../Core/Inc

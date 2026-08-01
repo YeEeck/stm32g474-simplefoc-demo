@@ -1,13 +1,13 @@
 #include "hardware_uart_stream.h"
 
 extern UART_HandleTypeDef huart2;
-uint8_t rx_byte_;
+volatile uint8_t rx_byte_;
 
 bool HardwareUartStream::init() {
   // 启用 USART2 接收中断并启动单字节接收（CubeMX 未开 USART2 NVIC，这里补上）
   HAL_NVIC_SetPriority(USART2_IRQn, 5, 0);
   HAL_NVIC_EnableIRQ(USART2_IRQn);
-  return HAL_UART_Receive_IT(&huart2, &rx_byte_, 1) == HAL_OK;
+  return HAL_UART_Receive_IT(&huart2, (uint8_t*)&rx_byte_, 1) == HAL_OK;
 }
 
 void HardwareUartStream::onRxByte(uint8_t b) {
@@ -16,7 +16,7 @@ void HardwareUartStream::onRxByte(uint8_t b) {
     rx_buf_[rx_head_] = b;
     rx_head_ = next;
   }
-  HAL_UART_Receive_IT(&huart2, &rx_byte_, 1); // 继续接收
+  HAL_UART_Receive_IT(&huart2, (uint8_t*)&rx_byte_, 1); // 继续接收
 }
 
 int HardwareUartStream::available() {

@@ -7,10 +7,11 @@
 // DRV8316CT 内置电流检测（IPROPI）采样：
 // SOA/SOB/SOC → ADC1 注入组 IN1/IN2/IN4，由 TIM1 TRGO2（PWM 中心）硬件触发，
 // 注入转换完成中断中读取三路电流，再由中断内联驱动 FOC 电流环。
+// 通道映射委托基类 pinA/pinB/pinC（0/1/2 = 注入 rank 1/2/3），
+// 使基类 driverAlign 的相序自校正（交换 pin/offset/gain）真正生效。
 class IpropCurrentSense : public CurrentSense {
 public:
-  IpropCurrentSense(ADC_HandleTypeDef* hadc, float gain_v_per_a)
-      : hadc_(hadc), gain_v_per_a_(gain_v_per_a) {}
+  IpropCurrentSense(ADC_HandleTypeDef* hadc, float gain_v_per_a);
 
   int init() override;
   PhaseCurrent_s getPhaseCurrents() override;
@@ -22,7 +23,6 @@ private:
   static constexpr float ADC_VOLTAGE_CONV = 3.3f / 4096.0f;
 
   ADC_HandleTypeDef* hadc_;
-  float gain_v_per_a_; // IPROPI 增益 [V/A]，来自 motor_config（上板标定后改 motor_config.h）
 
   float sampleVoltage(int channel_index);
 };

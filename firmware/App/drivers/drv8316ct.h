@@ -13,6 +13,9 @@ namespace drv8316ct {
 // 唤醒等待按 datasheet t_WAKE 预留 1ms 余量。
 bool wakeup();
 
+// 拉低 nSLEEP 进入 sleep（输出全关，无锁定电流）。用于致命错误路径停机。
+void sleep();
+
 } // namespace drv8316ct
 
 #endif

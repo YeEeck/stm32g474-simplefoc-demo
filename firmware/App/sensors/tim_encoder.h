@@ -7,16 +7,13 @@
 #include "../motor_config.h"
 
 // MT6701 ABZ 编码器：TIM3 正交解码（4x，1024 线 → 4096 计数/圈）
-// Z 索引（PB4 EXTI 下降沿）将计数校准到最近的整圈。
+// Z 索引（PB4）已接出但当前对齐采用电压对齐（needsSearch=0），Z 不参与；若未来启用需重审零位基准。
 class TimEncoder : public Sensor {
 public:
   TimEncoder(TIM_HandleTypeDef* htim) : htim_(htim) {}
 
   void init() override;
   // 电压对齐校准即可完成初始化，不强制 Z 搜索（基类 needsSearch 默认返回 0）
-
-  // 由 HAL_GPIO_EXTI_Callback 调用（中断上下文）：Z 脉冲到达
-  void onIndexPulse();
 
 private:
   float getSensorAngle() override;

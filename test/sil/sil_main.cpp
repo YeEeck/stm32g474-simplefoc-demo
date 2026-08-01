@@ -29,12 +29,15 @@ uint32_t sim_get_pwm_arr();
 float sim_get_phase_voltage(int ch);
 uint32_t sim_get_encoder_cnt();
 void sim_freeze_encoder(bool freeze);
+bool sim_get_pwm_started();
+void sim_swap_phases(bool swap);
 GPIO_PinState sim_get_nsleep();
 void sim_set_phase_currents(float ia, float ib, float ic, float offset_v, float gain_v_per_a);
 }
 
-// ---- 固件回调（app.cpp 定义）----
+// ---- 固件回调（app.cpp 定义；Z 索引用例经 hal_stubs 弱默认回调注入）----
 extern "C" void HAL_ADCEx_InjectedConvCpltCallback(void* hadc);
+extern "C" void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin);
 
 #include "communication/SimpleFOCDebug.h"
 #include "hardware_uart_stream.h"
@@ -103,6 +106,8 @@ static bool test_startup() {
   app_init();
   check(sim_get_nsleep() == GPIO_PIN_SET, "nSLEEP pulled high (driver woken)");
   check(uart_contains("simplefoc torque demo ready"), "ready banner on uart");
+  check(uart_contains("Align sensor."), "debug: Align sensor. printed");
+  check(uart_contains("Ready."), "debug: Ready. printed");
   return true;
 }
 
@@ -128,6 +133,7 @@ static bool test_torque_control() {
   // 电流环闭环：固件反馈与模型真值一致，且接近目标 0.5A
   check(fabsf(model_motor.current_q() - 0.5f) < 0.1f, "q current converges to target (0.5A)");
   check(fabsf(motor.current.q - model_motor.current_q()) < 0.05f, "firmware feedback matches model");
+  check(uart_contains("0.5000\t"), "monitor line emitted (target 0.5 + tab-separated)");
   return true;
 }
 
@@ -198,14 +204,12 @@ static bool test_dynamic_response() {
   sim_inject_uart_bytes("T0.5\n");
   float settle_t = -1.0f, peak_iq = 0.0f, final_iq = 0.0f;
   int entered = 0;
-  float prev = 0.0f;
   run_sim_sampled(200, 1, [&](uint32_t t_ms, const MotorModel& m) {
     float iq = m.current_q();
     if (iq > 0.2f && !entered) entered = 1;
     if (entered && iq > 0.45f && settle_t < 0) settle_t = (float)t_ms;
     if (fabsf(iq) > peak_iq) peak_iq = fabsf(iq);
     final_iq = iq;
-    prev = iq;
   });
   printf("        settle@~%.0fms (|iq|>0.45), peak iq=%.3f, final iq=%.3f\n",
          settle_t, peak_iq, final_iq);
@@ -279,8 +283,58 @@ static bool test_align_failure_path() {
     const uint8_t* buf = sim_get_uart_out();
     printf("        uart[%zu]: %s\n", len, (const char*)buf);
   }
-  check(sim_get_nsleep() == GPIO_PIN_SET, "driver stays woken (no spurious shutdown)");
+  check(sim_get_nsleep() == GPIO_PIN_RESET, "driver put to sleep (nSLEEP low) after failure");
+  check(!sim_get_pwm_started(), "PWM stopped after initFOC failure (no locked current)");
   sim_freeze_encoder(false);
+  return true;
+}
+
+// ---- 测试 7b：Z 索引脉冲不扰动编码器角度（回归：Z 处理曾被删除）----
+static bool test_z_index_noop() {
+  printf("[TEST] Z index pulse does not disturb encoder angle\n");
+  model_motor.reset();
+  sim_clear_uart_out();
+  sim_inject_uart_bytes("T0.5\n");
+  run_sim(1500);
+  uint32_t cnt_before = sim_get_encoder_cnt();
+  HAL_GPIO_EXTI_Callback(GPIO_PIN_4); // 模拟 Z（PB4 EXTI）到达；固件无处理 → 弱默认 no-op
+  run_sim(2);
+  uint32_t cnt_after = sim_get_encoder_cnt();
+  int32_t delta = (int32_t)(cnt_after - cnt_before);
+  if (delta < 0) delta = -delta;
+  printf("        cnt %u -> %u (delta %d)\n", cnt_before, cnt_after, delta);
+  check(delta < 100, "counter continuous across Z pulse (no angle jump)");
+  sim_inject_uart_bytes("T0\n");
+  run_sim(500);
+  return true;
+}
+
+// ---- 测试 7c：SOA/SOB 接线接反时 driverAlign 自校正，闭环仍收敛 ----
+static bool test_phase_swap_self_correct() {
+  printf("[TEST] swapped SOA/SOB wiring self-corrected by driverAlign\n");
+  firmware_reset();
+  model_motor.reset();
+  sim_swap_phases(true); // SOA ↔ SOB 接反：JDR1 收到 B 相电流，JDR2 收到 A 相电流
+  sim_clear_uart_out();
+  app_init();            // driverAlign 应检测并交换 pinA/pinB 映射，不失败
+  check(uart_contains("simplefoc torque demo ready"), "initFOC succeeds despite swapped phases");
+  check(uart_contains("CS: Switch A-B"), "driverAlign reports phase swap");
+  sim_clear_uart_out();
+  sim_inject_uart_bytes("T0.5\n");
+  run_sim(3000);
+  check(fabsf(model_motor.current_q() - 0.5f) < 0.1f, "q current converges (mapping self-corrected)");
+  sim_inject_uart_bytes("T0\n");
+  run_sim(500);
+
+  // 恢复接线并重新上电：driverAlign 把映射换回（pinA=0/pinB=1），后续测试获得干净状态
+  sim_swap_phases(false);
+  firmware_reset();
+  model_motor.reset();
+  sim_clear_uart_out();
+  app_init();
+  check(uart_contains("simplefoc torque demo ready"), "re-init with normal wiring restores mapping");
+  sim_inject_uart_bytes("T0\n");
+  run_sim(100);
   return true;
 }
 
@@ -289,7 +343,7 @@ static bool test_long_run_stability() {
   printf("[TEST] long-run stability (60s sim)\n");
   model_motor.reset();
   sim_inject_uart_bytes("T0.5\n");
-  float omega_start = 0, omega_end = 0;
+  float omega_end = 0;
   bool nan_detected = false;
   run_sim_sampled(60000, 1000, [&](uint32_t, const MotorModel& m) {
     if (!isfinite(m.velocity()) || !isfinite(m.current_a())) nan_detected = true;
@@ -328,6 +382,8 @@ int main() {
   test_current_limit();
   test_dynamic_response();
   test_reverse_direction();
+  test_phase_swap_self_correct();
+  test_z_index_noop();
   test_long_run_stability();
   test_align_failure_path(); // 放最后：app_init 卡在 while(1)（固件错误路径），由线程承载
 

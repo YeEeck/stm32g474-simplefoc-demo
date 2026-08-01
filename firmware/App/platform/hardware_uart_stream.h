@@ -4,7 +4,7 @@
 #include "Arduino.h"
 #include "main.h"
 
-extern uint8_t rx_byte_; // USART2 单字节接收缓冲（由 onRxByte 转发到环形缓冲）
+extern volatile uint8_t rx_byte_; // USART2 单字节接收缓冲（由 onRxByte 转发到环形缓冲）
 
 // USART2 → Stream：接收用中断 + 环形缓冲，发送轮询。
 class HardwareUartStream : public Stream {

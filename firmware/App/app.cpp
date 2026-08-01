@@ -7,6 +7,7 @@
 #include "BLDCMotor.h"
 #include "drivers/BLDCDriver3PWM.h"
 #include "communication/Commander.h"
+#include "communication/SimpleFOCDebug.h"
 
 #include "platform/hardware_uart_stream.h"
 #include "drivers/drv8316ct.h"
@@ -28,6 +29,14 @@ Commander commander = Commander(HardwareUartStream::instance(), '\n', false);
 // 零电流偏移校准完成前，禁止中断驱动电流环（避免以假读数驱动电机）
 volatile bool foc_gate_open = false;
 
+// 致命错误停机：停止 PWM 输出 + 驱动板 sleep（避免对齐电压常驻电机造成锁定电流/发热）
+static void fatal_shutdown() {
+  HAL_TIM_PWM_Stop(&htim1, TIM_CHANNEL_1);
+  HAL_TIM_PWM_Stop(&htim1, TIM_CHANNEL_2);
+  HAL_TIM_PWM_Stop(&htim1, TIM_CHANNEL_3);
+  drv8316ct::sleep();
+}
+
 // SimpleFOC Studio 兼容：M/Q/D/V/L/C 等命令
 static void cmd_motor(char* cmd) { commander.motor(&motor, cmd); }
 static void cmd_target(char* cmd) { commander.target(&motor, cmd); }
@@ -37,12 +46,6 @@ static void cmd_motion(char* cmd) { commander.motion(&motor, cmd); }
 extern "C" void HAL_ADCEx_InjectedConvCpltCallback(ADC_HandleTypeDef* hadc) {
   if (hadc == &hadc1 && foc_gate_open) {
     motor.loopFOC(); // 20kHz 电流环：由 PWM 中心触发的采样中断驱动
-  }
-}
-
-extern "C" void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
-  if (GPIO_Pin == Z_INDEX_Pin) {
-    encoder.onIndexPulse();
   }
 }
 
@@ -58,16 +61,15 @@ void app_init(void) {
   HAL_Delay(10);
   drv8316ct::wakeup();
 
-  // 2. 串口（NVIC + 中断接收）
+  // 2. 串口（NVIC + 中断接收）；SimpleFOC 调试输出指向同一串口（排障用）
   HardwareUartStream::instance().init();
+  SimpleFOCDebug::enable(&HardwareUartStream::instance());
 
   // 3. 各组件显式初始化（SimpleFOC 不自动调用）
   driver.init();        // PWM 启动（TRGO2 触发注入转换）
   current_sense.init(); // 注入转换开始（校准前 foc_gate 关闭，不会驱动电机）
   current_sense.calibrateOffsets(32); // 电机静止、零电流 → 偏移基准
   encoder.init();
-  HAL_NVIC_SetPriority(EXTI4_IRQn, 5, 0);
-  HAL_NVIC_EnableIRQ(EXTI4_IRQn);
 
   // 3. 电机配置：扭矩控制（电流环）
   driver.voltage_power_supply = motor_config::vbus_v;
@@ -94,12 +96,14 @@ void app_init(void) {
   // 4. 初始化硬件（PWM 启动）并校准零电流偏移
   if (!motor.init()) {
     HardwareUartStream::instance().println("motor init failed");
+    fatal_shutdown();
     while (1) {}
   }
 
   // 5. 电压对齐校准（电机会短暂转动/锁定）
   if (!motor.initFOC()) {
     HardwareUartStream::instance().println("initFOC failed");
+    fatal_shutdown();
     while (1) {}
   }
 
@@ -121,4 +125,5 @@ void app_init(void) {
 void app_loop(void) {
   commander.run();
   motor.move(); // torque 模式下将 target 同步到电流环给定（current_sp）
+  motor.monitor(); // 每 monitor_downsample 次主循环输出一行监控（target/Vq/Iq/vel/angle）
 }

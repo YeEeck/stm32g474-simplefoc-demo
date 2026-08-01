@@ -130,7 +130,7 @@ openocd -f interface/cmsis-dap.cfg -f target/stm32g4x.cfg \
 
 **预期**：`Iq_fw / I_real` 在 0.95~1.05 之间。
 
-**如果偏差 > 5%**：修正固件增益 `firmware/App/app.cpp` 中 `IpropCurrentSense(&hadc1, 0.15f)` 的 0.15 → `0.15 × (I_real / Iq_fw)`，重新烧录后复测。
+**如果偏差 > 5%**：修正 `firmware/App/motor_config.h` 中 `ipropi_gain_v_per_a` → `0.15 × (I_real / Iq_fw)`，重新烧录后复测。
 
 **注意**：堵转时间 ≤ 5 秒；若 T0.5 时 monitor 的 Iq 读数异常（饱和/跳变），检查 SOx 接线与 VREF 供电。
 

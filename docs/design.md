@@ -43,6 +43,8 @@
 | 额定电压 | 24 V | `voltage_power_supply` |
 | 额定转速 | 1000 RPM @24V | 电频率 ≈ 183 Hz |
 
+> **单一来源**：上表与固件、SIL 电机模型共享的物理真值（极对数、相电阻、母线电压、IPROPI 增益、编码器计数/圈）以 `firmware/App/motor_config.h` 为准，上板实测标定只改该文件。
+
 ### 2.3 引脚映射
 
 | 功能 | 引脚 | 外设配置 |
@@ -111,7 +113,7 @@
 
   SOx 输出 = VREF/2 + I×GCSA；VREF 引脚由板上供电（2.8V~AVDD，外接 0.1µF）。
   **已确认：本驱动板 GAIN 引脚接地 → GCSA = 0.15 V/A**（量程 ±11A，电流分辨率约 5.4 mA/LSB，额定 1.4A 时约 260 LSB，满足扭矩控制精度）。
-  固件 `IpropCurrentSense` 按 0.15 V/A 配置；上板后按 §7 步骤 3 实测标定复核。
+  固件 `IpropCurrentSense` 按电机配置（`motor_config.h` 的 `ipropi_gain_v_per_a` = 0.15 V/A）配置；上板后按 §7 步骤 3 实测标定复核。
 - **信号特性**：IPROPI 输出为内部滤波后的电流信号，带宽有限。缓解措施：
   - 采样时刻对齐 PWM 中心，避免开关噪声
   - 电流环带宽预期 ≤ 500 Hz–1 kHz 起步（PID 初值见 §4），观察噪声再提升
